@@ -11,6 +11,11 @@ namespace idescript\package;
  * @time 2021-9-6 0:52
  * @description 更新到最新版本
  */
+/**
+ * @auth guest
+ * @time 2022-5-28 16:18
+ * @description 修复一些bug，使其更加动态化
+ */
 class Spiders{
 
     protected $user_agent = 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Safari/537.36 Core/1.70.3676.400 QQBrowser/10.4.3505.400';
@@ -30,6 +35,7 @@ class Spiders{
         $port               = !isset($data['port'])             ? ""                        : $data['port'];                            // 指定端口
         $referer            = !isset($data['referer'])          ? ""                        : $data['referer'];                         // 伪装的页面来源地址
         $decode             = !isset($data['decode'])           ? ""                        : $data['decode'];                          // 是否需整理数据源编码
+        $follow_action      = !isset($data['follow_action'])    ? 1                         : $data['follow_action'];                          // 是否需整理数据源编码
         $other              = !isset($data['other'])            ? []                        : $data['other'];                           // 伪装的页面来源地址
 
         $return_body        = !isset($data['return_body'])      || $data['return_body'];                                              // 是否需要返回Cookie
@@ -41,7 +47,7 @@ class Spiders{
         $curl_array = [
             CURLOPT_URL             => $url,
             CURLOPT_RETURNTRANSFER  => 1,
-            CURLOPT_FOLLOWLOCATION  => 1,
+            CURLOPT_FOLLOWLOCATION  => $follow_action,
             CURLOPT_SSL_VERIFYPEER  => 0,
             CURLOPT_HTTPHEADER      => $header,
             CURLOPT_TIMEOUT         => $time_out,
@@ -82,15 +88,12 @@ class Spiders{
         if (curl_errno($curl)) {
             return curl_error($curl);
         }
-        if($last_uri){
-            curl_exec($curl);
-            $content['last_uri']=curl_getinfo($curl, CURLINFO_EFFECTIVE_URL); //获取跳转后真实地址;
-            curl_close($curl);
-            return $content;
-        }
+
 
         $result = curl_exec($curl);
-
+        if($last_uri){
+            $content['last_uri']=curl_getinfo($curl, CURLINFO_EFFECTIVE_URL); //获取跳转后真实地址;
+        }
         if(!empty($decode)){
             $encode = mb_detect_encoding($result, array("ASCII", "UTF-8", "GB2312", "GBK", "BIG5"));
             $result = mb_convert_encoding($result, $decode, $encode);
@@ -102,11 +105,15 @@ class Spiders{
             $header = $result_arr[count($result_arr)-2];
             $body = $result_arr[count($result_arr)-1];
             if(count($result_arr) > 2){
-                $content['warning']['return_*'] = "当前 return_*=true 配置的下的请求可能经过了302跳转,存在多个Response Header,仅保存最后最后一次的cooke和header";
+                $content['warning']['return_*'] = "当前 return_*=true 配置的下的请求可能经过了302跳转,存在多个Response Header,仅格式化最后一次的header—arr,Cookie则将自动合并，完整内容在header-str中显示";
+                $header = $result;
             }
             if($return_cookie){
                 preg_match_all("/Set\-Cookie:([^;]*);/", $header, $matches);
-                $content['cookie']   = substr($matches[1][0], 1);
+                $content['cookie']   = [
+                    'str'=>implode(";", $matches[1]),
+                    'array'=>$matches[1],
+                ];
             }
             if($return_header){
                 $header_str = explode("\r\n", $header);
