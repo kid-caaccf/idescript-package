@@ -1,0 +1,9 @@
+/.idea
+/.vscode
+/vendor
+/src/package/cryption
+/src/package/mail
+/src/package/ueditor
+*.log
+.env
+composer.lock
