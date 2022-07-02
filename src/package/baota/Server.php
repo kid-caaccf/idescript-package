@@ -56,5 +56,15 @@ class Server{
         ])['result'],true);
     }
 
+    // 获取服务网络信息
+    public function get_server_network_info(){
+        return json_decode($this->spiders()->spiders([
+            'url' => $this->host . '/system?action=GetNetWork',
+            'post'=>[
+                'request_token'=>$this->request_token,
+                'request_time'=>$this->request_time
+            ]
+        ])['result'],true);
+    }
 
 }
