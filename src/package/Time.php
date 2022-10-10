@@ -15,11 +15,11 @@ class Time{
 
     /**
      * 取13位时间戳
-     * @return int
+     * @return float
      */
-    public function microtime(): int{
+    public function microtime(): float{
         list($s1, $s2) = explode(' ', microtime());
-        return (float)sprintf('%.0f', (floatval($s1) + floatval($s2)) * 1000);
+        return floatval($s1 + $s2);
     }
 
 
